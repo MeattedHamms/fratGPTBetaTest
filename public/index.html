@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FratGPT</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="header-inner">
+        <h1>FratGPT <span class="beta">BETA</span></h1>
+        <a href="admin.html" class="admin-link">Admin</a>
+      </div>
+    </header>
+
+    <div id="chat-window">
+      <div id="messages">
+        <div class="msg bot">
+          <div class="bubble">Yo. Ask me anything. 🍺</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="input-area">
+      <input id="prompt-input" type="text" placeholder="Say something..." autocomplete="off" />
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <!-- Feedback bar — fixed bottom-right, only visible after a response -->
+  <div id="feedback-bar" class="hidden">
+    <div id="feedback-prompt-text">Was that right?</div>
+    <div id="feedback-actions">
+      <button id="thumbs-up">👍 Yeah</button>
+      <button id="thumbs-down">👎 Nah</button>
+    </div>
+    <div id="correction-area" class="hidden">
+      <textarea id="correct-input" rows="2" placeholder="What should it have said?"></textarea>
+      <button id="submit-correction">Submit</button>
+    </div>
+  </div>
+
+  <script>
+    const messagesEl = document.getElementById('messages');
+    const promptInput = document.getElementById('prompt-input');
+    const sendBtn = document.getElementById('send-btn');
+    const feedbackBar = document.getElementById('feedback-bar');
+    const thumbsUp = document.getElementById('thumbs-up');
+    const thumbsDown = document.getElementById('thumbs-down');
+    const correctionArea = document.getElementById('correction-area');
+    const correctInput = document.getElementById('correct-input');
+    const submitCorrection = document.getElementById('submit-correction');
+
+    // State
+    let conversationHistory = []; // [{role, content}, ...]
+    let lastExchange = null;       // {prompt, botResponse}
+    let pendingFeedback = false;   // blocks next send until rated
+
+    // Disable/enable send
+    function setSendLocked(locked) {
+      pendingFeedback = locked;
+      sendBtn.disabled = locked;
+      promptInput.disabled = locked;
+      sendBtn.title = locked ? 'Rate the last response first' : '';
+    }
+
+    function appendMsg(text, who) {
+      const div = document.createElement('div');
+      div.className = `msg ${who}`;
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = text;
+      div.appendChild(bubble);
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return bubble;
+    }
+
+    function showFeedbackBar() {
+      correctionArea.classList.add('hidden');
+      correctInput.value = '';
+      feedbackBar.classList.remove('hidden');
+      feedbackBar.classList.add('slide-in');
+      setSendLocked(true);
+    }
+
+    function hideFeedbackBar() {
+      feedbackBar.classList.add('hidden');
+      feedbackBar.classList.remove('slide-in');
+      setSendLocked(false);
+    }
+
+    async function sendFeedback(result, correctResponse) {
+      if (!lastExchange) return;
+      const body = {
+        prompt: lastExchange.prompt,
+        botResponse: lastExchange.botResponse,
+        result
+      };
+      if (correctResponse) body.correctResponse = correctResponse;
+      try {
+        await fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      } catch {}
+      hideFeedbackBar();
+    }
+
+    async function sendMessage() {
+      if (pendingFeedback) return;
+      const text = promptInput.value.trim();
+      if (!text) return;
+
+      promptInput.value = '';
+      sendBtn.disabled = true;
+
+      appendMsg(text, 'user');
+
+      // Typing indicator
+      const botDiv = document.createElement('div');
+      botDiv.className = 'msg bot';
+      botDiv.innerHTML = '<div class="bubble typing"><span></span><span></span><span></span></div>';
+      messagesEl.appendChild(botDiv);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      let botBubble = null;
+      let fullText = '';
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text, history: conversationHistory })
+        });
+
+        if (!res.ok || !res.body) throw new Error('Bad response');
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // keep incomplete line
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            let parsed;
+            try { parsed = JSON.parse(line.slice(6)); } catch { continue; }
+
+            if (parsed.error) {
+              botDiv.remove();
+              appendMsg('Something broke. Try again.', 'system');
+              sendBtn.disabled = false;
+              return;
+            }
+
+            if (parsed.text) {
+              // Replace typing indicator with text bubble on first token
+              if (!botBubble) {
+                botDiv.remove();
+                botBubble = appendMsg('', 'bot');
+              }
+              fullText += parsed.text;
+              botBubble.textContent = fullText;
+              messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+
+            if (parsed.done) {
+              fullText = parsed.fullText || fullText;
+              if (botBubble) botBubble.textContent = fullText;
+
+              // Update history
+              conversationHistory.push({ role: 'user', content: text });
+              conversationHistory.push({ role: 'assistant', content: fullText });
+
+              // Keep history to last 20 turns to avoid ballooning context
+              if (conversationHistory.length > 40) {
+                conversationHistory = conversationHistory.slice(-40);
+              }
+
+              lastExchange = { prompt: text, botResponse: fullText };
+              showFeedbackBar();
+            }
+          }
+        }
+      } catch (err) {
+        botDiv.remove();
+        if (botBubble) botBubble.closest('.msg').remove();
+        appendMsg('Something broke. Try again.', 'system');
+        sendBtn.disabled = false;
+      }
+    }
+
+    // Event listeners
+    sendBtn.addEventListener('click', sendMessage);
+    promptInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !pendingFeedback) sendMessage();
+    });
+
+    thumbsUp.addEventListener('click', () => sendFeedback('good'));
+
+    thumbsDown.addEventListener('click', () => {
+      correctionArea.classList.remove('hidden');
+      correctInput.focus();
+    });
+
+    submitCorrection.addEventListener('click', () => {
+      const correct = correctInput.value.trim();
+      if (!correct) return;
+      sendFeedback('bad', correct);
+    });
+
+    correctInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const correct = correctInput.value.trim();
+        if (correct) sendFeedback('bad', correct);
+      }
+    });
+  </script>
+</body>
+</html>

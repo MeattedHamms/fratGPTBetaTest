@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(timeout 4 node server.js)",
+      "Skill(claude-api)",
+      "Bash(node --check server.js)"
+    ]
+  }
+}
