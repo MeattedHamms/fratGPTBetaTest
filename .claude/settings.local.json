@@ -4,7 +4,10 @@
       "Bash(npm install *)",
       "Bash(timeout 4 node server.js)",
       "Skill(claude-api)",
-      "Bash(node --check server.js)"
+      "Bash(node --check server.js)",
+      "WebFetch(domain:openrouter.ai)",
+      "WebFetch(domain:api.together.xyz)",
+      "WebFetch(domain:ollama.com)"
     ]
   }
 }

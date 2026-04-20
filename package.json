@@ -8,6 +8,6 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "@anthropic-ai/sdk": "^0.52.0"
+    "openai": "^4.0.0"
   }
 }
