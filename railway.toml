@@ -1,0 +1,7 @@
+[deploy]
+startCommand = "node server.js"
+healthcheckPath = "/"
+healthcheckTimeout = 10
+
+[[volumes]]
+mountPath = "/data"
