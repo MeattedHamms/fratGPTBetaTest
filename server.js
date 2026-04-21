@@ -6,6 +6,7 @@ const OpenAI = require('openai');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const MAIN_PASSWORD = process.env.MAIN_PASSWORD;
 const TRAINING_PATH = path.join(__dirname, 'fratbot_data.json');
 const DATA_DIR = process.env.DATA_DIR || __dirname;
 const FEEDBACK_PATH = path.join(DATA_DIR, 'feedback.json');
@@ -32,6 +33,23 @@ function loadFeedback() {
 function saveFeedback(data) {
   fs.writeFileSync(FEEDBACK_PATH, JSON.stringify(data, null, 2));
 }
+
+function entryContains(entry, keyword) {
+  const text = [entry.prompt, entry.response, entry.correctResponse].join(' ').toLowerCase();
+  return text.includes(keyword.toLowerCase());
+}
+
+// Strip wojack/wojak entries left over from early testing
+function purgeWojack() {
+  if (!fs.existsSync(FEEDBACK_PATH)) return;
+  const before = loadFeedback();
+  const after = before.filter(e => !entryContains(e, 'wojack') && !entryContains(e, 'wojak'));
+  if (after.length < before.length) {
+    saveFeedback(after);
+    console.log(`Purged ${before.length - after.length} wojack entries`);
+  }
+}
+purgeWojack();
 
 
 
@@ -182,6 +200,12 @@ app.post('/api/feedback', (req, res) => {
   res.json({ success: true });
 });
 
+app.post('/api/main/login', (req, res) => {
+  const { password } = req.body;
+  if (!MAIN_PASSWORD || password === MAIN_PASSWORD) res.json({ success: true });
+  else res.status(401).json({ error: 'Wrong password' });
+});
+
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;
   if (password === ADMIN_PASSWORD) res.json({ success: true });
@@ -193,8 +217,50 @@ app.get('/api/admin/feedback', (req, res) => {
   res.json(loadFeedback());
 });
 
+app.delete('/api/admin/feedback', (req, res) => {
+  if (req.query.password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+  const { timestamp } = req.query;
+  if (!timestamp) return res.status(400).json({ error: 'Missing timestamp' });
+
+  const feedback = loadFeedback();
+  const next = feedback.filter(e => e.timestamp !== timestamp);
+  if (next.length === feedback.length) return res.status(404).json({ error: 'Not found' });
+  saveFeedback(next);
+  res.json({ success: true });
+});
+
+app.delete('/api/admin/feedback/bulk', (req, res) => {
+  if (req.query.password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+  const keyword = (req.query.keyword || '').trim();
+  if (!keyword) return res.status(400).json({ error: 'Missing keyword' });
+
+  const feedback = loadFeedback();
+  const next = feedback.filter(e => !entryContains(e, keyword));
+  const removed = feedback.length - next.length;
+  saveFeedback(next);
+  res.json({ success: true, removed });
+});
+
+app.post('/api/admin/message', (req, res) => {
+  const { password, prompt, correctResponse } = req.body;
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+  if (!prompt || !correctResponse) return res.status(400).json({ error: 'Missing fields' });
+
+  const feedback = loadFeedback();
+  feedback.push({
+    prompt,
+    response: '(admin crafted)',
+    result: 'admin',
+    correctResponse,
+    source: 'admin',
+    timestamp: new Date().toISOString()
+  });
+  saveFeedback(feedback);
+  res.json({ success: true });
+});
+
 app.listen(PORT, () => {
   console.log(`FratGPT running at http://localhost:${PORT}`);
   console.log('Using ' + DOLPHIN_MODEL + ' via xAI');
-  console.log('Version 1.6');
+  console.log('Version 1.4');
 });

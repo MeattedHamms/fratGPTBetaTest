@@ -368,10 +368,157 @@ header h1 {
 .row-bad  { background: rgba(192,57,43,0.05); }
 #feedback-table tr:last-child td { border-bottom: none; }
 .result-cell { font-weight: 700; white-space: nowrap; }
-.result-cell.good { color: var(--good); }
-.result-cell.bad  { color: var(--bad); }
+.result-cell.good         { color: var(--good); }
+.result-cell.bad          { color: var(--bad); }
+.result-cell.admin-result { color: #7b9edc; }
+.row-admin { background: rgba(100,140,220,0.05); }
 .ts { color: var(--text-dim); white-space: nowrap; }
+.del-cell { width: 36px; text-align: center; padding: 6px 8px !important; }
+.delete-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  border-radius: 6px;
+  width: 26px; height: 26px;
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.delete-btn:hover {
+  color: var(--bad);
+  border-color: var(--bad);
+  background: rgba(192,57,43,0.08);
+}
 
 #no-data { text-align: center; color: var(--text-dim); padding: 40px; }
+
+/* Bulk Remove box */
+#bulk-remove-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+#bulk-remove-box h3 { color: var(--bad); font-size: 15px; }
+#bulk-remove-box p  { color: var(--text-dim); font-size: 13px; }
+.bulk-row { display: flex; gap: 10px; align-items: center; }
+.bulk-row input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text);
+  padding: 9px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.bulk-row input:focus { border-color: var(--bad); }
+#bulk-remove-btn {
+  background: var(--bad);
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 9px;
+  padding: 9px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+#bulk-remove-btn:hover { opacity: 0.85; }
+
+/* Create Message box */
+#create-message-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+#create-message-box h3 { color: var(--accent); font-size: 15px; }
+#create-message-box p  { color: var(--text-dim); font-size: 13px; }
+.create-row { display: flex; flex-direction: column; gap: 4px; }
+.create-row label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.create-row input, .create-row textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text);
+  padding: 9px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+}
+.create-row input:focus, .create-row textarea:focus { border-color: var(--accent); }
+#cm-submit {
+  background: var(--accent);
+  color: #000;
+  font-weight: 700;
+  border: none;
+  border-radius: 9px;
+  padding: 9px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+#cm-submit:hover { background: var(--accent-dim); }
+.cm-ok { color: var(--good); font-size: 13px; }
+
+/* Main lock screen */
+#main-lock {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+#main-lock-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 40px;
+  width: min(360px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+}
+#main-lock-box h2 { color: var(--accent); font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+#main-lock-box p  { color: var(--text-dim); font-size: 14px; }
+#main-password-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 10px 16px;
+  font-size: 15px;
+  outline: none;
+  text-align: center;
+  letter-spacing: 3px;
+}
+#main-password-input:focus { border-color: var(--accent); }
+#main-login-btn {
+  background: var(--accent);
+  color: #000;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius);
+  padding: 11px;
+  font-size: 15px;
+  cursor: pointer;
+}
+#main-login-btn:hover { background: var(--accent-dim); }
 
 .hidden { display: none !important; }

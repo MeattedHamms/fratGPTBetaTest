@@ -7,7 +7,18 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app">
+  <!-- Main site lock -->
+  <div id="main-lock">
+    <div id="main-lock-box">
+      <h2>FratGPT <span class="beta">BETA</span></h2>
+      <p>Enter password to continue</p>
+      <input id="main-password-input" type="password" placeholder="Password" autocomplete="off" />
+      <button id="main-login-btn">Enter</button>
+      <p id="main-login-error" class="hidden error-msg">Wrong password.</p>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
     <header>
       <div class="header-inner">
         <h1>FratGPT <span class="beta">BETA</span></h1>
@@ -18,7 +29,7 @@
     <div id="chat-window">
       <div id="messages">
         <div class="msg bot">
-          <div class="bubble">Yo. Ask me anything. Version 1.3. I should be able to recall stories told to me in memory.</div>
+          <div class="bubble">Yo. Ask me anything. Version 1.4. </div>
         </div>
       </div>
     </div>
@@ -41,6 +52,33 @@
       <button id="submit-correction">Submit</button>
     </div>
   </div>
+
+  <script>
+    const mainLock = document.getElementById('main-lock');
+    const mainApp = document.getElementById('app');
+    const mainPasswordInput = document.getElementById('main-password-input');
+    const mainLoginBtn = document.getElementById('main-login-btn');
+    const mainLoginError = document.getElementById('main-login-error');
+
+    async function mainLogin() {
+      mainLoginError.classList.add('hidden');
+      try {
+        const res = await fetch('/api/main/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: mainPasswordInput.value })
+        });
+        if (!res.ok) { mainLoginError.classList.remove('hidden'); return; }
+        mainLock.classList.add('hidden');
+        mainApp.classList.remove('hidden');
+      } catch {
+        mainLoginError.classList.remove('hidden');
+      }
+    }
+
+    mainLoginBtn.addEventListener('click', mainLogin);
+    mainPasswordInput.addEventListener('keydown', e => { if (e.key === 'Enter') mainLogin(); });
+  </script>
 
   <script>
     const messagesEl = document.getElementById('messages');
