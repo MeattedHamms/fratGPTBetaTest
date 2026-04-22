@@ -14,7 +14,7 @@
       <p>Enter password to continue</p>
       <input id="main-password-input" type="password" placeholder="Password" autocomplete="off" />
       <button id="main-login-btn">Enter</button>
-      <p id="main-login-error" class="hidden error-msg">Wrong password.</p>
+      <p id="main-login-error" class="hidden error-msg">Wrong password bitchass.</p>
     </div>
   </div>
 
@@ -29,7 +29,7 @@
     <div id="chat-window">
       <div id="messages">
         <div class="msg bot">
-          <div class="bubble">Yo. Ask me anything. Version 1.4. </div>
+          <div class="bubble">Yo. Ask me anything. Version 1.5. </div>
         </div>
       </div>
     </div>
@@ -46,10 +46,15 @@
     <div id="feedback-actions">
       <button id="thumbs-up">👍 Yeah</button>
       <button id="thumbs-down">👎 Nah</button>
+      <button id="direct-feedback-btn">✉️ Tell Admin</button>
     </div>
     <div id="correction-area" class="hidden">
       <textarea id="correct-input" rows="2" placeholder="What should it have said?"></textarea>
       <button id="submit-correction">Submit</button>
+    </div>
+    <div id="direct-feedback-area" class="hidden">
+      <textarea id="direct-feedback-input" rows="2" placeholder="Send a message directly to the admin..."></textarea>
+      <button id="submit-direct-feedback">Send</button>
     </div>
   </div>
 
@@ -90,6 +95,10 @@
     const correctionArea = document.getElementById('correction-area');
     const correctInput = document.getElementById('correct-input');
     const submitCorrection = document.getElementById('submit-correction');
+    const directFeedbackBtn = document.getElementById('direct-feedback-btn');
+    const directFeedbackArea = document.getElementById('direct-feedback-area');
+    const directFeedbackInput = document.getElementById('direct-feedback-input');
+    const submitDirectFeedback = document.getElementById('submit-direct-feedback');
 
     // State
     let conversationHistory = []; // [{role, content}, ...]
@@ -119,6 +128,8 @@
     function showFeedbackBar() {
       correctionArea.classList.add('hidden');
       correctInput.value = '';
+      directFeedbackArea.classList.add('hidden');
+      directFeedbackInput.value = '';
       feedbackBar.classList.remove('hidden');
       feedbackBar.classList.add('slide-in');
       setSendLocked(true);
@@ -247,6 +258,7 @@
     thumbsUp.addEventListener('click', () => sendFeedback('good'));
 
     thumbsDown.addEventListener('click', () => {
+      directFeedbackArea.classList.add('hidden');
       correctionArea.classList.remove('hidden');
       correctInput.focus();
     });
@@ -262,6 +274,26 @@
         e.preventDefault();
         const correct = correctInput.value.trim();
         if (correct) sendFeedback('bad', correct);
+      }
+    });
+
+    directFeedbackBtn.addEventListener('click', () => {
+      correctionArea.classList.add('hidden');
+      directFeedbackArea.classList.remove('hidden');
+      directFeedbackInput.focus();
+    });
+
+    submitDirectFeedback.addEventListener('click', () => {
+      const msg = directFeedbackInput.value.trim();
+      if (!msg) return;
+      sendFeedback('direct', msg);
+    });
+
+    directFeedbackInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const msg = directFeedbackInput.value.trim();
+        if (msg) sendFeedback('direct', msg);
       }
     });
   </script>

@@ -189,6 +189,7 @@ header h1 {
 
 #feedback-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 #feedback-actions button {
@@ -202,15 +203,20 @@ header h1 {
   transition: opacity 0.15s;
 }
 #feedback-actions button:hover { opacity: 0.82; }
-#thumbs-up   { background: var(--good); color: #fff; }
-#thumbs-down { background: var(--bad);  color: #fff; }
+#thumbs-up          { background: var(--good); color: #fff; }
+#thumbs-down        { background: var(--bad);  color: #fff; }
+#direct-feedback-btn {
+  flex-basis: 100%;
+  background: #444;
+  color: #fff;
+}
 
-#correction-area {
+#correction-area, #direct-feedback-area {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-#correct-input {
+#correct-input, #direct-feedback-input {
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -221,8 +227,8 @@ header h1 {
   outline: none;
   font-family: inherit;
 }
-#correct-input:focus { border-color: var(--accent); }
-#submit-correction {
+#correct-input:focus, #direct-feedback-input:focus { border-color: var(--accent); }
+#submit-correction, #submit-direct-feedback {
   background: var(--accent);
   color: #000;
   font-weight: 700;
@@ -232,7 +238,7 @@ header h1 {
   cursor: pointer;
   font-size: 13px;
 }
-#submit-correction:hover { background: var(--accent-dim); }
+#submit-correction:hover, #submit-direct-feedback:hover { background: var(--accent-dim); }
 
 /* ===== ADMIN ===== */
 .admin-body #app { height: 100vh; overflow: hidden; }
@@ -372,6 +378,8 @@ header h1 {
 .result-cell.bad          { color: var(--bad); }
 .result-cell.admin-result { color: #7b9edc; }
 .row-admin { background: rgba(100,140,220,0.05); }
+.result-cell.direct-result { color: #d4a017; }
+.row-direct { background: rgba(212,160,23,0.06); }
 .ts { color: var(--text-dim); white-space: nowrap; }
 .del-cell { width: 36px; text-align: center; padding: 6px 8px !important; }
 .delete-btn {

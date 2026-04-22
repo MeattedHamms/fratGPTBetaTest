@@ -65,6 +65,7 @@
               <option value="good">Good only</option>
               <option value="bad">Bad only</option>
               <option value="admin">Admin only</option>
+              <option value="direct">Direct feedback only</option>
             </select>
           </label>
           <button id="export-btn">Export JSON</button>
@@ -201,12 +202,14 @@
       if (result === 'good') return '👍 Good';
       if (result === 'bad') return '👎 Bad';
       if (result === 'admin') return '🛠 Admin';
+      if (result === 'direct') return '✉️ Direct';
       return result;
     }
 
     function resultClass(result) {
       if (result === 'good') return 'good';
       if (result === 'bad') return 'bad';
+      if (result === 'direct') return 'direct-result';
       return 'admin-result';
     }
 
@@ -236,7 +239,7 @@
 
       for (const row of sorted) {
         const tr = document.createElement('tr');
-        tr.className = row.result === 'good' ? 'row-good' : row.result === 'admin' ? 'row-admin' : 'row-bad';
+        tr.className = row.result === 'good' ? 'row-good' : row.result === 'admin' ? 'row-admin' : row.result === 'direct' ? 'row-direct' : 'row-bad';
         const delBtn = document.createElement('button');
         delBtn.className = 'delete-btn';
         delBtn.textContent = '✕';
