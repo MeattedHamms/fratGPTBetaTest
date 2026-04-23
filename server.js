@@ -103,26 +103,54 @@ EXAMPLE TONE (do NOT repeat these — just feel the vibe):
 ${examples}`;
 }
 
-const STOP_WORDS = new Set(['what','when','where','which','that','this','with','from','your','have','will','they','been','were','some','more','than','just','also','into','then','them','about','would','could','should','does','dont','like','said','yeah','nah','bro']);
+const STOP_WORDS = new Set(['what','when','where','which','that','this','with','from','your','have','will','they','been','were','some','more','than','just','also','into','then','them','about','would','could','should','does','dont','like','said','yeah','nah']);
 
+// Build a set of known names by scanning feedback for capitalized words (e.g. "Jack", "Alex").
+// Used to give name-keyword matches higher scoring weight.
+function buildNameIndex(corrections) {
+  const names = new Set();
+  for (const entry of corrections) {
+    const text = (entry.prompt || '') + ' ' + (entry.correctResponse || '');
+    for (const match of text.matchAll(/\b[A-Z][a-z]{1,}\b/g)) {
+      if (match[0].length >= 3) names.add(match[0].toLowerCase());
+    }
+  }
+  return names;
+}
+
+// Feedback is read from disk on every request — no restart needed for new entries to take effect.
 function getFeedbackContext(userPrompt) {
   const feedback = loadFeedback();
+  const corrections = feedback.filter(e => e.correctResponse);
+  if (corrections.length === 0) return '';
+
   const keywords = userPrompt.toLowerCase()
     .replace(/[^a-z0-9\s]/g, '')
     .split(/\s+/)
-    .filter(w => w.length > 3 && !STOP_WORDS.has(w));
+    .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
 
   if (keywords.length === 0) return '';
 
-  const matches = feedback.filter(entry => {
-    if (!entry.correctResponse) return false;
-    const text = (entry.prompt + ' ' + entry.correctResponse).toLowerCase();
-    return keywords.some(kw => text.includes(kw));
-  });
+  const knownNames = buildNameIndex(corrections);
 
-  if (matches.length === 0) return '';
+  const selected = corrections
+    .map(entry => {
+      const text = (entry.prompt + ' ' + entry.correctResponse).toLowerCase();
+      let score = 0;
+      for (const kw of keywords) {
+        if (!text.includes(kw)) continue;
+        // Names are worth 5x — they're the most specific signal we have
+        score += knownNames.has(kw) ? 5 : 1;
+      }
+      return { entry, score };
+    })
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10)
+    .map(({ entry }) => entry);
 
-  const selected = matches.slice(0, 3);
+  if (selected.length === 0) return '';
+
   let context = '\nCOMMUNITY CORRECTIONS (treat these as facts you know):\n';
   for (const m of selected) {
     context += `If asked about "${m.prompt}": ${m.correctResponse}\n`;
@@ -264,5 +292,5 @@ app.post('/api/admin/message', (req, res) => {
 app.listen(PORT, () => {
   console.log(`FratGPT running at http://localhost:${PORT}`);
   console.log('Using ' + DOLPHIN_MODEL + ' via xAI');
-  console.log('Version 1.5');
+  console.log('Version 1.6');
 });
